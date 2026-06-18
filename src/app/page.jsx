@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { SURAHS } from "@/data/surahs";
+import { ChevronLeft, ChevronRight, Eye, EyeOff } from "lucide-react";
 
 export default function QuranPage() {
   const [page, setPage] = useState(1);
@@ -9,12 +10,14 @@ export default function QuranPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
-  
+
   // Interactive UI states
   const [activeWordId, setActiveWordId] = useState(null);
   const [activeVerseKey, setActiveVerseKey] = useState(null);
   const [selectedWord, setSelectedWord] = useState(null);
   const [isPlayingWord, setIsPlayingWord] = useState(false);
+  const [isVerseHidden, setIsVerseHidden] = useState(false);
+  const [revealedVerseKeys, setRevealedVerseKeys] = useState(new Set());
 
   // Search & Navigation States
   const [searchQuery, setSearchQuery] = useState("");
@@ -158,17 +161,44 @@ export default function QuranPage() {
     }
   };
 
+  // Toggle hide/show all — always resets per-verse revealed state
+  const handleToggleHide = () => {
+    setIsVerseHidden((v) => !v);
+    setRevealedVerseKeys(new Set());
+  };
+
+  // Reveal next hidden verse one by one (in order)
+  const handleRevealNext = () => {
+    const nextVerse = verses.find((v) => !revealedVerseKeys.has(v.verse_key));
+    if (nextVerse) {
+      setRevealedVerseKeys((prev) => new Set([...prev, nextVerse.verse_key]));
+    }
+  };
+
+  const allRevealed =
+    isVerseHidden &&
+    verses.length > 0 &&
+    verses.every((v) => revealedVerseKeys.has(v.verse_key));
+
+  // When all verses are revealed one-by-one, auto-transition to fully-visible state
+  useEffect(() => {
+    if (allRevealed) {
+      setIsVerseHidden(false);
+      setRevealedVerseKeys(new Set());
+    }
+  }, [allRevealed]);
+
   return (
     <div className="flex flex-col min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 shadow-sm">
+      <header className="sticky top-0 z-50 flex flex-col lg:flex-row gap-2 items-center justify-between px-6 py-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-emerald-600 dark:bg-emerald-700 flex items-center justify-center text-white font-bold shadow-md shadow-emerald-500/20">
             S
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-              Sabit Quran
+              Sabbit Quran
             </h1>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               Mushaf Madinah Utsmani 1441 H
@@ -192,7 +222,7 @@ export default function QuranPage() {
               className="w-40 md:w-48 px-3 py-1.5 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-sm"
             />
             {isDropdownOpen && (
-              <div className="absolute right-0 mt-1 w-60 max-h-60 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl z-50 py-1 scrollbar-thin">
+              <div className="absolute left-0 mt-1 w-60 max-h-60 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl z-50 py-1 scrollbar-thin">
                 {filteredSurahs.length > 0 ? (
                   filteredSurahs.map(([id, surah]) => (
                     <button
@@ -205,10 +235,16 @@ export default function QuranPage() {
                       className="w-full text-left px-3 py-2 text-xs md:text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex justify-between items-center transition-colors"
                     >
                       <div className="flex flex-col">
-                        <span className="font-semibold text-zinc-900 dark:text-zinc-100">{id}. {surah.name}</span>
-                        <span className="text-[10px] text-zinc-400">{surah.translation} (Hlm {surah.startPage})</span>
+                        <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                          {id}. {surah.name}
+                        </span>
+                        <span className="text-[10px] text-zinc-400">
+                          {surah.translation} (Hlm {surah.startPage})
+                        </span>
                       </div>
-                      <span className="font-amiri text-sm text-emerald-600 dark:text-emerald-450">{surah.arabic}</span>
+                      <span className="font-amiri text-sm text-emerald-600 dark:text-emerald-450">
+                        {surah.arabic}
+                      </span>
                     </button>
                   ))
                 ) : (
@@ -245,18 +281,90 @@ export default function QuranPage() {
               disabled={page <= 1}
               className="px-2.5 py-1 text-xs font-semibold rounded hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
             >
-              Sebelumnya
+              <ChevronLeft />
             </button>
             <button
               onClick={() => setPage((p) => Math.min(604, p + 1))}
               disabled={page >= 604}
               className="px-2.5 py-1 text-xs font-semibold rounded hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
             >
-              Selanjutnya
+              <ChevronRight />
             </button>
+          </div>
+
+          {/* Eye toggle + Reveal-one — visible on lg+ only */}
+          <div className="hidden lg:flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800 p-1 rounded-lg">
+            <button
+              onClick={handleToggleHide}
+              title={
+                isVerseHidden
+                  ? "Tampilkan semua ayat"
+                  : "Sembunyikan semua ayat"
+              }
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+                isVerseHidden
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "hover:bg-white dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-300"
+              }`}
+            >
+              {isVerseHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+              <span>{isVerseHidden ? "Buka Semua" : "Tutup"}</span>
+            </button>
+            {isVerseHidden && (
+              <button
+                onClick={handleRevealNext}
+                disabled={allRevealed}
+                title="Buka satu ayat berikutnya"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-amber-500 hover:bg-amber-400 text-white shadow-sm"
+              >
+                <Eye size={14} />
+                <span>
+                  {allRevealed
+                    ? "Semua terbuka"
+                    : `+1 Ayat (${revealedVerseKeys.size}/${verses.length})`}
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </header>
+
+      {/* Fixed Eye FAB group — only visible below lg */}
+      <div className="lg:hidden fixed bottom-6 right-6 z-50 flex items-center gap-2">
+        {/* Reveal one at a time — only shown when hidden */}
+        {isVerseHidden && (
+          <button
+            onClick={handleRevealNext}
+            disabled={allRevealed}
+            title="Buka satu ayat berikutnya"
+            className="flex items-center gap-2 px-4 py-3 rounded-full text-sm font-semibold shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed bg-amber-500 text-white shadow-amber-500/40"
+          >
+            <Eye size={18} />
+            <span className="hidden sm:inline">
+              {allRevealed
+                ? "Semua"
+                : `${revealedVerseKeys.size}/${verses.length}`}
+            </span>
+          </button>
+        )}
+        {/* Eye toggle */}
+        <button
+          onClick={handleToggleHide}
+          title={
+            isVerseHidden ? "Tampilkan semua ayat" : "Sembunyikan semua ayat"
+          }
+          className={`flex items-center gap-2 px-4 py-3 rounded-full text-sm font-semibold shadow-xl transition-all active:scale-95 ${
+            isVerseHidden
+              ? "bg-emerald-600 text-white shadow-emerald-500/40"
+              : "bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 shadow-zinc-300/50 dark:shadow-zinc-900/60"
+          }`}
+        >
+          {isVerseHidden ? <EyeOff size={18} /> : <Eye size={18} />}
+          <span className="hidden sm:inline">
+            {isVerseHidden ? "Buka Semua" : "Tutup Ayat"}
+          </span>
+        </button>
+      </div>
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -282,15 +390,27 @@ export default function QuranPage() {
           ) : (
             <div className="w-full max-w-2xl relative">
               {/* Mushaf Frame Box */}
-              <div className="w-full aspect-[1/1.41] bg-[#FBF7F0] dark:bg-[#0E1511] text-[#1F140A] dark:text-[#E8DFD0] rounded-3xl border-8 border-[#D4AF37] dark:border-[#B59424] shadow-2xl relative overflow-hidden flex flex-col p-8 md:p-10 select-none" style={{ containerType: "inline-size" }}>
+              <div
+                className={`w-full aspect-[1/1.41] bg-[#FBF7F0] dark:bg-[#0E1511] text-[#1F140A] dark:text-[#E8DFD0] rounded-3xl border-8 border-[#D4AF37] dark:border-[#B59424] shadow-2xl relative overflow-hidden flex flex-col p-8 md:p-10 select-none ${page % 2 === 1 ? "border-l-0 rounded-tl-none rounded-bl-none" : "border-r-0 rounded-tr-none rounded-br-none"}`}
+                style={{ containerType: "inline-size" }}
+              >
                 {/* Vintage Paper Overlay */}
                 <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:16px_16px]"></div>
 
                 {/* Islamic Gold Corner Designs */}
-                <div className="absolute top-2 left-2 w-8 h-8 border-t-2 border-l-2 border-[#D4AF37] opacity-60 rounded-tl-lg pointer-events-none"></div>
-                <div className="absolute top-2 right-2 w-8 h-8 border-t-2 border-r-2 border-[#D4AF37] opacity-60 rounded-tr-lg pointer-events-none"></div>
-                <div className="absolute bottom-2 left-2 w-8 h-8 border-b-2 border-l-2 border-[#D4AF37] opacity-60 rounded-bl-lg pointer-events-none"></div>
-                <div className="absolute bottom-2 right-2 w-8 h-8 border-b-2 border-r-2 border-[#D4AF37] opacity-60 rounded-br-lg pointer-events-none"></div>
+                {/* Corner ornaments — hidden on the borderless side */}
+                {page % 2 !== 1 && (
+                  <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-[#D4AF37] opacity-60 rounded-tl-lg pointer-events-none"></div>
+                )}
+                {page % 2 === 1 && (
+                  <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-[#D4AF37] opacity-60 rounded-tr-lg pointer-events-none"></div>
+                )}
+                {page % 2 !== 1 && (
+                  <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-[#D4AF37] opacity-60 rounded-bl-lg pointer-events-none"></div>
+                )}
+                {page % 2 === 1 && (
+                  <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-[#D4AF37] opacity-60 rounded-br-lg pointer-events-none"></div>
+                )}
 
                 {/* Page Header (Juz & Page Info) */}
                 <div className="flex justify-between items-center text-xs md:text-sm font-semibold text-[#8B6B22] dark:text-[#C5A866] border-b border-[#D4AF37]/30 pb-3 mb-4 font-sans">
@@ -339,13 +459,19 @@ export default function QuranPage() {
                     }
 
                     // Standard line container
-                    const isLastLineOfSurah = specialLines[lineNum + 1]?.type === "header";
-                    const alignClass = (page <= 2 || isLastLineOfSurah || words.length < 5)
-                      ? "justify-center gap-x-2 md:gap-x-4"
-                      : "justify-between";
+                    const isLastLineOfSurah =
+                      specialLines[lineNum + 1]?.type === "header";
+                    const alignClass =
+                      page <= 2 || isLastLineOfSurah || words.length < 5
+                        ? "justify-center gap-x-2 md:gap-x-4"
+                        : "justify-between";
 
                     // Calculate total characters in standard line to dynamically scale font size and prevent overflow
-                    const lineTextLength = words.reduce((acc, w) => acc + (w.text_uthmani?.length || 0), 0) + words.length;
+                    const lineTextLength =
+                      words.reduce(
+                        (acc, w) => acc + (w.text_uthmani?.length || 0),
+                        0,
+                      ) + words.length;
                     const dynamicFontSize = `clamp(1rem, ${215 / lineTextLength}cqw, 2.25rem)`;
 
                     return (
@@ -355,11 +481,18 @@ export default function QuranPage() {
                         dir="rtl"
                       >
                         {words.length > 0 ? (
-                          <div className={`flex flex-row flex-nowrap items-center w-full ${alignClass}`}>
+                          <div
+                            className={`flex flex-row flex-nowrap items-center w-full ${alignClass}`}
+                          >
                             {words.map((word) => {
                               const isActive = activeWordId === word.id;
-                              const isVerseActive = activeVerseKey === word.verse_key;
+                              const isVerseActive =
+                                activeVerseKey === word.verse_key;
                               const isEnd = word.char_type_name === "end";
+                              // Hidden if verse-hide is on AND this verse hasn't been revealed yet
+                              const wordIsHidden =
+                                isVerseHidden &&
+                                !revealedVerseKeys.has(word.verse_key);
 
                               if (isEnd) {
                                 return (
@@ -373,7 +506,7 @@ export default function QuranPage() {
                                       isVerseActive
                                         ? "ring-2 ring-emerald-500 ring-offset-1 dark:ring-offset-black"
                                         : ""
-                                    }`}
+                                    } ${wordIsHidden ? "blur-sm pointer-events-none" : ""}`}
                                   >
                                     {word.text_uthmani}
                                   </span>
@@ -383,16 +516,24 @@ export default function QuranPage() {
                               return (
                                 <button
                                   key={word.id}
-                                  onClick={() => handleWordClick(word)}
+                                  onClick={() =>
+                                    !wordIsHidden && handleWordClick(word)
+                                  }
                                   style={{ fontSize: dynamicFontSize }}
-                                  className={`font-amiri whitespace-nowrap tracking-normal leading-normal transition-all duration-200 cursor-pointer outline-none rounded px-0.5 md:px-1 py-px flex-shrink ${
-                                    isActive
-                                      ? "bg-[#D4AF37]/30 dark:bg-emerald-700/40 text-emerald-800 dark:text-emerald-300 scale-105"
-                                      : isVerseActive
-                                      ? "bg-[#D4AF37]/10 dark:bg-emerald-950/30 text-zinc-900 dark:text-zinc-50"
-                                      : "text-[#1F140A] dark:text-[#E8DFD0] hover:bg-[#D4AF37]/15 dark:hover:bg-emerald-950/20"
+                                  className={`font-amiri whitespace-nowrap tracking-normal leading-normal transition-all duration-200 outline-none rounded px-0.5 md:px-1 py-px flex-shrink ${
+                                    wordIsHidden
+                                      ? "blur-[6px] select-none cursor-default pointer-events-none"
+                                      : isActive
+                                        ? "bg-[#D4AF37]/30 dark:bg-emerald-700/40 text-emerald-800 dark:text-emerald-300 scale-105 cursor-pointer"
+                                        : isVerseActive
+                                          ? "bg-[#D4AF37]/10 dark:bg-emerald-950/30 text-zinc-900 dark:text-zinc-50 cursor-pointer"
+                                          : "text-[#1F140A] dark:text-[#E8DFD0] hover:bg-[#D4AF37]/15 dark:hover:bg-emerald-950/20 cursor-pointer"
                                   }`}
-                                  title={word.transliteration?.text}
+                                  title={
+                                    wordIsHidden
+                                      ? undefined
+                                      : word.transliteration?.text
+                                  }
                                 >
                                   {word.text_uthmani}
                                 </button>
@@ -416,7 +557,8 @@ export default function QuranPage() {
 
               {/* Instructions helper overlay */}
               <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 mt-3">
-                * Klik pada kata untuk mendengarkan audio per kata dan melihat artinya.
+                * Klik pada kata untuk mendengarkan audio per kata dan melihat
+                artinya.
               </p>
             </div>
           )}
@@ -465,7 +607,8 @@ export default function QuranPage() {
               </div>
             ) : (
               <div className="py-6 text-center text-sm text-zinc-400 dark:text-zinc-500 italic">
-                Klik kata di mushaf untuk memuat transliterasi dan terjemahan per kata.
+                Klik kata di mushaf untuk memuat transliterasi dan terjemahan
+                per kata.
               </div>
             )}
           </div>
@@ -475,10 +618,12 @@ export default function QuranPage() {
             <h3 className="text-xs font-semibold tracking-wider text-zinc-400 dark:text-zinc-500 uppercase mb-3 pb-2 border-b border-zinc-100 dark:border-zinc-800">
               Terjemahan Ayat (Halaman {page})
             </h3>
-            
+
             {loading ? (
               <div className="flex-1 flex items-center justify-center py-10">
-                <span className="text-sm text-zinc-400 animate-pulse">Memuat terjemahan...</span>
+                <span className="text-sm text-zinc-400 animate-pulse">
+                  Memuat terjemahan...
+                </span>
               </div>
             ) : (
               <div className="flex-grow overflow-y-auto pr-1 space-y-4 custom-scrollbar">
@@ -501,7 +646,10 @@ export default function QuranPage() {
                       </div>
                       <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
                         {verse.translations?.[0]?.text
-                          ? verse.translations[0].text.replace(/<sup[^>]*>.*?<\/sup>/g, "")
+                          ? verse.translations[0].text.replace(
+                              /<sup[^>]*>.*?<\/sup>/g,
+                              "",
+                            )
                           : "Tidak ada terjemahan."}
                       </p>
                     </div>

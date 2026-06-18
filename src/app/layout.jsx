@@ -23,7 +23,7 @@ const outfit = Outfit({
 });
 
 export const metadata = {
-  title: "Sabit Quran - Mushaf Madinah Utsmani 1441 H",
+  title: "Sabbit Quran - Mushaf Madinah Utsmani 1441 H",
   description: "Membaca Quran Madinah Utsmani dengan layout 1441 H",
 };
 
@@ -33,7 +33,9 @@ export default function RootLayout({ children }) {
       lang="id"
       className={`${geistSans.variable} ${geistMono.variable} ${amiri.variable} ${outfit.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">{children}</body>
+      <body className="min-h-full flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+        {children}
+      </body>
     </html>
   );
 }
