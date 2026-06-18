@@ -191,13 +191,13 @@ export default function QuranPage() {
   return (
     <div className="flex flex-col min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-50 flex flex-col lg:flex-row gap-2 items-center justify-between px-6 py-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 shadow-sm">
+      <header className="sticky top-0 z-50 flex flex-row gap-2 items-center justify-between px-2 md:px-6 py-2 md:py-4 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-600 dark:bg-emerald-700 flex items-center justify-center text-white font-bold shadow-md shadow-emerald-500/20">
+          <div className="w-8 md:w-10 h-8 md:h-10 rounded-lg bg-emerald-600 dark:bg-emerald-700 flex items-center justify-center text-white font-bold shadow-md shadow-emerald-500/20">
             S
           </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <div className="hidden md:block">
+            <h1 className="text-sm md:text-lg font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
               Sabbit Quran
             </h1>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
@@ -279,16 +279,16 @@ export default function QuranPage() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
-              className="px-2.5 py-1 text-xs font-semibold rounded hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+              className="px-1 py-1 text-xs font-semibold rounded hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
             >
-              <ChevronLeft />
+              <ChevronLeft size={20} />
             </button>
             <button
               onClick={() => setPage((p) => Math.min(604, p + 1))}
               disabled={page >= 604}
-              className="px-2.5 py-1 text-xs font-semibold rounded hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+              className="px-1 py-1 text-xs font-semibold rounded hover:bg-white dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
             >
-              <ChevronRight />
+              <ChevronRight size={20} />
             </button>
           </div>
 
@@ -367,7 +367,7 @@ export default function QuranPage() {
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-2 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column: Mushaf Page */}
         <div className="lg:col-span-8 flex flex-col items-center">
           {loading ? (
@@ -391,7 +391,7 @@ export default function QuranPage() {
             <div className="w-full max-w-2xl relative">
               {/* Mushaf Frame Box */}
               <div
-                className={`w-full aspect-[1/1.41] bg-[#FBF7F0] dark:bg-[#0E1511] text-[#1F140A] dark:text-[#E8DFD0] rounded-3xl border-8 border-[#D4AF37] dark:border-[#B59424] shadow-2xl relative overflow-hidden flex flex-col p-8 md:p-10 select-none ${page % 2 === 1 ? "border-l-0 rounded-tl-none rounded-bl-none" : "border-r-0 rounded-tr-none rounded-br-none"}`}
+                className={`w-full aspect-[1/1.65] md:aspect-[1/1.41] bg-[#FBF7F0] dark:bg-[#0E1511] text-[#1F140A] dark:text-[#E8DFD0] rounded-3xl border-2 md:border-4 lg:border-8 border-[#D4AF37] dark:border-[#B59424] shadow-2xl relative overflow-hidden flex flex-col p-2 md:p-10 select-none ${page % 2 === 1 ? "!border-l-0 rounded-tl-none rounded-bl-none" : "!border-r-0 rounded-tr-none rounded-br-none"}`}
                 style={{ containerType: "inline-size" }}
               >
                 {/* Vintage Paper Overlay */}
@@ -413,12 +413,15 @@ export default function QuranPage() {
                 )}
 
                 {/* Page Header (Juz & Page Info) */}
-                <div className="flex justify-between items-center text-xs md:text-sm font-semibold text-[#8B6B22] dark:text-[#C5A866] border-b border-[#D4AF37]/30 pb-3 mb-4 font-sans">
+                <div className="flex justify-between items-center text-[10px] md:text-sm font-semibold text-[#8B6B22] dark:text-[#C5A866] border-b border-[#D4AF37]/30 pb-1 sm:pb-3 mb-1 sm:mb-4 font-sans">
                   <div>Juz {currentJuz}</div>
                   <div className="text-center font-bold tracking-widest">
                     {currentSurahs.map((sId) => SURAHS[sId]?.name).join(" & ")}
                   </div>
-                  <div>Halaman {page}</div>
+                  <div>
+                    <span className="hidden sm:inline">Hlm. </span>
+                    {page}
+                  </div>
                 </div>
 
                 {/* 15 Lines Layout Container */}
@@ -432,11 +435,11 @@ export default function QuranPage() {
                         return (
                           <div
                             key={lineNum}
-                            className="w-full flex items-center justify-center my-1"
+                            className="w-full flex items-center justify-center my-0"
                           >
-                            <div className="w-full py-1.5 md:py-2.5 px-4 bg-gradient-to-r from-transparent via-[#F1E4C3] to-transparent dark:via-[#1B2920] border-y border-[#D4AF37]/40 flex items-center justify-between text-xs md:text-sm text-[#5C4513] dark:text-[#D1BE96] font-bold">
+                            <div className="w-full py-1.5 md:py-2.5 px-4 bg-gradient-to-r from-transparent via-[#F1E4C3] to-transparent dark:via-[#1B2920] border-y border-[#D4AF37]/40 flex items-center justify-between text-[10px] md:text-sm text-[#5C4513] dark:text-[#D1BE96] font-bold">
                               <span>{surah?.type}</span>
-                              <span className="font-amiri text-lg md:text-xl font-bold tracking-normal">
+                              <span className="font-amiri text-[14px] md:text-xl font-bold tracking-normal">
                                 سُورَةُ {surah?.arabic}
                               </span>
                               <span>{surah?.name}</span>
@@ -449,7 +452,7 @@ export default function QuranPage() {
                         return (
                           <div
                             key={lineNum}
-                            className="w-full flex items-center justify-center font-amiri text-2xl md:text-3xl text-center py-1.5 text-[#2C1F0F] dark:text-[#F3ECDF] my-1"
+                            className="w-full flex items-center justify-center font-amiri text-sm sm:text-xl  text-center py-1 text-[#2C1F0F] dark:text-[#F3ECDF] my-1 font-bold"
                             dir="rtl"
                           >
                             بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
@@ -550,8 +553,8 @@ export default function QuranPage() {
                 </div>
 
                 {/* Page Footer */}
-                <div className="flex justify-center items-center text-xs text-[#8B6B22] dark:text-[#C5A866] border-t border-[#D4AF37]/30 pt-3 mt-4">
-                  <span>Sabit Quran Utsmani</span>
+                <div className="hidden lg:flex justify-center items-center text-xs text-[#8B6B22] dark:text-[#C5A866] border-t border-[#D4AF37]/30 pt-3 mt-4">
+                  <span>Sabbit Quran Utsmani</span>
                 </div>
               </div>
 
@@ -660,6 +663,20 @@ export default function QuranPage() {
           </div>
         </div>
       </main>
+
+      <footer className="text-center text-xs text-zinc-400 dark:text-zinc-500 mt-6 mb-4 flex flex-col lg:flex-row gap-1 justify-center">
+        <p className="">
+          © 2026 <a href="https://sabbit.id">Sabbit</a> - Aplikasi Murojaah
+          Al-Quran -
+        </p>
+        <a
+          href="https://trakteer.id/madaapril/tip"
+          target="_blank"
+          className="underline"
+        >
+          Support Kami
+        </a>
+      </footer>
     </div>
   );
 }
